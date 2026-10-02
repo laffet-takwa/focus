@@ -1,17 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import { supabase } from "./supabaseClient"; // make sure you have supabaseClient.js configured
 
+type Task = {
+  id: number;
+  text: string;
+  due_date: string | null;
+  completed: boolean | null;
+  color: string | null;
+};
+
+type Category = {
+  id: number;
+  title: string;
+  tasks: Task[];
+};
+
+type EditingTask = {
+  catId: number;
+  taskId: number;
+};
+
 export default function GlassTodoBoard() {
-  const [categories, setCategories] = useState([]);
-  const [addingTaskCat, setAddingTaskCat] = useState(null);
-  const [editingTask, setEditingTask] = useState(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [addingTaskCat, setAddingTaskCat] = useState<number | null>(null);
+  const [editingTask, setEditingTask] = useState<EditingTask | null>(null);
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskDate, setNewTaskDate] = useState("");
   const [newTaskColor, setNewTaskColor] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [categoryMenuOpen, setCategoryMenuOpen] = useState(null);
+  const [editingCategory, setEditingCategory] = useState<number | null>(null);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState<number | null>(null);
 
   const colors = ["#F44336", "#FF9800", "#FFEB3B", "#4CAF50", "#2196F3", "#9C27B0", "#795548"];
 
@@ -27,7 +46,7 @@ export default function GlassTodoBoard() {
   }, []);
 
   // Add/Edit Task
-  const handleAddOrEditTask = async (catId) => {
+  const handleAddOrEditTask = async (catId: number) => {
     if (!newTaskText.trim() || !newTaskDate) return;
 
     if (editingTask) {
@@ -52,26 +71,26 @@ export default function GlassTodoBoard() {
   };
 
   // Delete Task
-  const handleDeleteTask = async (taskId) => {
+  const handleDeleteTask = async (taskId: number) => {
     const { error } = await supabase.from("tasks").delete().eq("id", taskId);
     if (error) console.error(error);
     fetchData();
   };
 
   // Toggle Task Completion
-  const toggleTask = async (taskId, completed) => {
+  const toggleTask = async (taskId: number, completed: boolean) => {
     const { error } = await supabase.from("tasks").update({ completed: !completed }).eq("id", taskId);
     if (error) console.error(error);
     fetchData();
   };
 
   // Drag & Drop
-  const handleDragStart = (e, task, fromCat) => {
-    e.dataTransfer.setData("taskId", task.id);
-    e.dataTransfer.setData("fromCat", fromCat.id);
+  const handleDragStart = (e: DragEvent, task: Task, fromCat: Category) => {
+    e.dataTransfer.setData("taskId", String(task.id));
+    e.dataTransfer.setData("fromCat", String(fromCat.id));
   };
 
-  const handleDrop = async (e, toCat) => {
+  const handleDrop = async (e: DragEvent, toCat: Category) => {
     e.preventDefault();
     const taskId = parseInt(e.dataTransfer.getData("taskId"));
     const fromCatId = parseInt(e.dataTransfer.getData("fromCat"));
@@ -82,7 +101,7 @@ export default function GlassTodoBoard() {
   };
 
   // Delete Category
-  const handleDeleteCategory = async (catId) => {
+  const handleDeleteCategory = async (catId: number) => {
     const { error } = await supabase.from("categories").delete().eq("id", catId);
     if (error) console.error(error);
     setCategoryMenuOpen(null);
@@ -90,7 +109,7 @@ export default function GlassTodoBoard() {
   };
 
   // Save/Edit Category
-  const handleSaveCategory = async (catId) => {
+  const handleSaveCategory = async (catId: number) => {
     if (!newCategoryTitle.trim()) return;
     const { error } = await supabase.from("categories").update({ title: newCategoryTitle }).eq("id", catId);
     if (error) console.error(error);
@@ -203,7 +222,7 @@ export default function GlassTodoBoard() {
                 >
                   <div>
                     <div style={{ display: "flex", alignItems: "center" }}>
-                      <input type="checkbox" checked={task.completed} onChange={() => toggleTask(task.id, task.completed)} />
+                      <input type="checkbox" checked={!!task.completed} onChange={() => toggleTask(task.id, !!task.completed)} />
                       <span
                         style={{
                           marginLeft: "8px",
@@ -217,7 +236,7 @@ export default function GlassTodoBoard() {
                     <div className="task-footer" style={{ display: "flex", alignItems: "center", marginTop: "4px" }}>
                       <span>📅 {task.due_date}</span>
                       <span
-                        style={{ display: "inline-block", width: "14px", height: "14px", borderRadius: "50%", background: task.color, marginLeft: "8px" }}
+                        style={{ display: "inline-block", width: "14px", height: "14px", borderRadius: "50%", background: task.color ?? "transparent", marginLeft: "8px" }}
                       ></span>
                     </div>
                   </div>
@@ -226,8 +245,8 @@ export default function GlassTodoBoard() {
                       onClick={() => {
                         setEditingTask({ catId: cat.id, taskId: task.id });
                         setNewTaskText(task.text);
-                        setNewTaskDate(task.due_date);
-                        setNewTaskColor(task.color);
+                        setNewTaskDate(task.due_date ?? "");
+                        setNewTaskColor(task.color ?? "");
                         setAddingTaskCat(cat.id);
                       }}
                       style={{ cursor: "pointer", border: "none", background: "transparent" }}
