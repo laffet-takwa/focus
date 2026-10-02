@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
+import GoogleAuthButton from "./GoogleAuthButton";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -127,6 +128,19 @@ export default function Signup() {
             {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
+
+        <div className="flex items-center gap-3 my-4">
+          <div className="flex-1 h-px bg-white/20" />
+          <span className="text-xs text-gray-400 uppercase tracking-wider">
+            or
+          </span>
+          <div className="flex-1 h-px bg-white/20" />
+        </div>
+
+        <GoogleAuthButton
+          label="Sign up with Google"
+          onError={setError}
+        />
 
         {error && (
           <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
